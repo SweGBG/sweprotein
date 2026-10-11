@@ -10,6 +10,12 @@ export const site = {
    */
   sceneVideo: "/video/sweprotein-scene.mp4",
   scenePoster: "/video/sweprotein-poster.jpg",
+  /**
+   * Phones get the same film as a sequence of stills (4 per second, 600x768, ~3 MB),
+   * drawn to a canvas. Scrubbing a video is too heavy for mobile decoders; stills are not.
+   * Re-create with: ffmpeg -i public/video/sweprotein-scene.mp4 -vf "fps=4,crop=600:768:(iw-600)/2:0" -c:v libwebp -quality 70 public/video/m/f%03d.webp
+   */
+  mobileFrames: { dir: "/video/m/f", count: 128, ext: ".webp" },
 };
 
 const sv = {

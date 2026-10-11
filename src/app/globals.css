@@ -141,3 +141,10 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
 @media (min-width: 900px) {
   .layer:last-child .glass { justify-self: start; align-self: center; margin: 0 0 0 clamp(2rem, 6vw, 6rem); text-align: left; }
 }
+
+/* Phones: blur behind glass is expensive while scrolling a full-screen scene */
+@media (max-width: 820px), (pointer: coarse) {
+  .glass, .stat, .lang { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .glass { background: rgba(23, 12, 18, .72); }
+  .stat { background: rgba(23, 12, 18, .6); }
+}

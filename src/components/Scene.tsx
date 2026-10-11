@@ -8,8 +8,9 @@ import type { Kind } from "@/lib/content";
 
 /**
  * The pinned scroll scene.
- * - If public/video/sweprotein-scene.mp4 exists (the H3 film), it is scrubbed by scroll.
- * - Otherwise the same story is drawn live on a canvas.
+ * - Desktop: the H3 film (public/video/sweprotein-scene.mp4) is scrubbed by scroll.
+ * - Phones: the same film as a still-image sequence (public/video/m/), drawn to the canvas.
+ * - If neither exists, the same story is drawn live on the canvas.
  * Story: hero berry → ingredients fall into the shake → milk swirl → the bottle rises.
  */
 
@@ -35,16 +36,22 @@ export default function Scene() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bottleText = useRef(t.bottle);
-  const [useVideo, setUseVideo] = useState(false);
+  const [mode, setMode] = useState<"canvas" | "video" | "frames">("canvas");
+  const useVideo = mode === "video";
 
   bottleText.current = t.bottle;
 
-  // Use the H3 film if it has been added to public/video/.
+  // Pick the scene source: stills on phones, film on desktop, drawn canvas as fallback.
   useEffect(() => {
     let alive = true;
-    fetch(site.sceneVideo, { method: "HEAD" })
-      .then((r) => alive && r.ok && (r.headers.get("content-type") ?? "").includes("video") && setUseVideo(true))
-      .catch(() => {});
+    const phone = matchMedia("(max-width: 820px), (pointer: coarse)").matches;
+    const { dir, count, ext } = site.mobileFrames;
+    const check = (url: string, type: string) =>
+      fetch(url, { method: "HEAD" }).then((r) => r.ok && (r.headers.get("content-type") ?? "").includes(type)).catch(() => false);
+    (async () => {
+      if (phone && count > 0 && (await check(`${dir}001${ext}`, "image"))) alive && setMode("frames");
+      else if (!phone && (await check(site.sceneVideo, "video"))) alive && setMode("video");
+    })();
     return () => {
       alive = false;
     };
@@ -56,7 +63,36 @@ export default function Scene() {
     const scene = sceneRef.current!;
     const video = videoRef.current;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let W = 0, H = 0, DPR = 1, cur = 0, raf = 0, lastSeek = 0;
+    let W = 0, H = 0, DPR = 1, cur = 0, raf = 0, lastSeek = 0, lastFrame = -1;
+
+    // Phone mode: load every still up front (small files), draw the nearest loaded one.
+    const frames: HTMLImageElement[] = [];
+    if (mode === "frames") {
+      const { dir, count, ext } = site.mobileFrames;
+      for (let i = 1; i <= count; i++) {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = `${dir}${String(i).padStart(3, "0")}${ext}`;
+        frames.push(img);
+      }
+    }
+    const drawFrame = (p: number) => {
+      const want = Math.round(p * (frames.length - 1));
+      let idx = -1;
+      for (let d = 0; d < frames.length && idx < 0; d++) {
+        if (frames[want - d]?.complete && frames[want - d].naturalWidth) idx = want - d;
+        else if (frames[want + d]?.complete && frames[want + d].naturalWidth) idx = want + d;
+      }
+      if (idx < 0 || idx === lastFrame) return;
+      lastFrame = idx;
+      const img = frames[idx];
+      const s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+      const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+      ctx.fillStyle = "#170c12";
+      ctx.fillRect(0, 0, W, H);
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
+    };
 
     const resize = () => {
       DPR = Math.min(2, window.devicePixelRatio || 1);
@@ -64,6 +100,7 @@ export default function Scene() {
       H = cv.clientHeight;
       cv.width = W * DPR;
       cv.height = H * DPR;
+      lastFrame = -1;
     };
     const progress = () => {
       const r = scene.getBoundingClientRect();
@@ -254,7 +291,9 @@ export default function Scene() {
       cur = reduce ? target : cur + (target - cur) * 0.1;
       const p = cur;
 
-      if (useVideo && video && video.duration) {
+      if (mode === "frames") {
+        drawFrame(p);
+      } else if (useVideo && video && video.duration) {
         // Scrub the film. Seeking every frame is heavy, so only when it moved enough.
         const want = p * (video.duration - 0.05);
         if (Math.abs(video.currentTime - want) > 1 / 30 && time - lastSeek > 16) {
@@ -265,7 +304,7 @@ export default function Scene() {
         drawCanvas(p, tm);
       }
 
-      const timing = useVideo ? TIMING.video : TIMING.canvas;
+      const timing = mode === "canvas" ? TIMING.canvas : TIMING.video;
       layerRefs.current.forEach((el, i) => {
         if (!el) return;
         const [a, b, c, d] = timing[i];
@@ -283,14 +322,14 @@ export default function Scene() {
       cancelAnimationFrame(raf);
       removeEventListener("resize", resize);
     };
-  }, [useVideo]);
+  }, [mode, useVideo]);
 
   const setLayer = (i: number) => (el: HTMLDivElement | null) => {
     layerRefs.current[i] = el;
   };
 
   return (
-    <div className="scene" ref={sceneRef} data-video={useVideo ? "on" : "off"}>
+    <div className="scene" ref={sceneRef} data-video={mode === "canvas" ? "off" : "on"}>
       <div className="stage">
         {useVideo ? (
           <video ref={videoRef} className="scene-video" src={site.sceneVideo} poster={site.scenePoster} muted playsInline preload="auto" aria-hidden="true" />
