@@ -227,3 +227,5 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .fl-glow, .fl-ghost, .fl-drops i, .fl-bottle, .fl-shadow, .fl { animation: none !important; }
   .fl { transform: none; }
 }
+footer .credit { color: var(--milk); text-decoration: none; border-bottom: 1px solid var(--berry); padding-bottom: 1px; transition: color .2s; }
+footer .credit:hover { color: var(--berry); }

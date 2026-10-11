@@ -62,7 +62,7 @@ const sv = {
   bottle: "30 G PROTEIN · JORDGUBB",
   flPick: "Välj smak",
   flPer: "per flaska",
-  foot: "SweProtein är ett påhittat varumärke. Demosajt byggd av SweGBG Agency.",
+  foot: "SweProtein är ett påhittat varumärke. © 2026",
 };
 
 export type Dict = typeof sv;
@@ -111,7 +111,7 @@ const en: Dict = {
   bottle: "30 G PROTEIN · STRAWBERRY",
   flPick: "Pick flavour",
   flPer: "per bottle",
-  foot: "SweProtein is a fictional brand. Demo site built by SweGBG Agency.",
+  foot: "SweProtein is a fictional brand. © 2026",
 };
 
 export const dict: Record<Lang, Dict> = { sv, en };

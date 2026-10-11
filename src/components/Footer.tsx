@@ -8,7 +8,9 @@ export default function Footer() {
     <footer>
       <div className="wrap">
         <span>{t.foot}</span>
-        <span>© 2026</span>
+        <a className="credit" href="https://www.swegbg.com" target="_blank" rel="noopener">
+          Skapad av SweGBG.com
+        </a>
       </div>
     </footer>
   );
