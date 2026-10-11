@@ -67,12 +67,17 @@ export default function Scene() {
 
     // Phone mode: load every still up front (small files), draw the nearest loaded one.
     const frames: HTMLImageElement[] = [];
+    // ready[i] = decoded and safe to draw without a hitch. Decoding happens while the page
+    // loads, not in the middle of a scroll.
+    const ready: boolean[] = [];
     if (mode === "frames") {
       const { dir, count, ext } = site.mobileFrames;
       for (let i = 1; i <= count; i++) {
         const img = new Image();
         img.decoding = "async";
         img.src = `${dir}${String(i).padStart(3, "0")}${ext}`;
+        const k = i - 1;
+        img.decode().then(() => (ready[k] = true)).catch(() => img.complete && (ready[k] = !!img.naturalWidth));
         frames.push(img);
       }
     }
@@ -80,8 +85,8 @@ export default function Scene() {
       const want = Math.round(p * (frames.length - 1));
       let idx = -1;
       for (let d = 0; d < frames.length && idx < 0; d++) {
-        if (frames[want - d]?.complete && frames[want - d].naturalWidth) idx = want - d;
-        else if (frames[want + d]?.complete && frames[want + d].naturalWidth) idx = want + d;
+        if (ready[want - d]) idx = want - d;
+        else if (ready[want + d]) idx = want + d;
       }
       if (idx < 0 || idx === lastFrame) return;
       lastFrame = idx;
@@ -95,7 +100,8 @@ export default function Scene() {
     };
 
     const resize = () => {
-      DPR = Math.min(2, window.devicePixelRatio || 1);
+      // Phones draw the stills at 1.5x: the frames are 600 px wide, so more pixels add cost, not detail.
+      DPR = Math.min(mode === "frames" ? 1.5 : 2, window.devicePixelRatio || 1);
       W = cv.clientWidth;
       H = cv.clientHeight;
       cv.width = W * DPR;
