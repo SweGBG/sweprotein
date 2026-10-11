@@ -31,7 +31,7 @@ const sv = {
   l3p: "Kall, krämig och klar på tre sekunder. Skaka, öppna, kör.",
   l3b: "Hitta din smak",
   fEy: "Fyra smaker",
-  fH: "Välj din styrka.",
+  fH: "Välj smak.",
   fP: "Varje flaska är mixad på mjölkprotein och riktig frukt. Ingen pulverburk, ingen shaker att diska.",
   nEy: "Läs etiketten",
   nH: "Inget att gömma.",
@@ -60,6 +60,8 @@ const sv = {
   oBtn: "Skriv upp mig",
   oOk: "Tack! Det här är en demo, så inget skickades.",
   bottle: "30 G PROTEIN · JORDGUBB",
+  flPick: "Välj smak",
+  flPer: "per flaska",
   foot: "SweProtein är ett påhittat varumärke. Demosajt byggd av SweGBG Agency.",
 };
 
@@ -78,7 +80,7 @@ const en: Dict = {
   l3p: "Cold, creamy and ready in three seconds. Shake, open, go.",
   l3b: "Find your flavour",
   fEy: "Four flavours",
-  fH: "Pick your strength.",
+  fH: "Pick your flavour.",
   fP: "Every bottle is blended from milk protein and real fruit. No tub of powder, no shaker to wash.",
   nEy: "Read the label",
   nH: "Nothing to hide.",
@@ -107,21 +109,27 @@ const en: Dict = {
   oBtn: "Sign me up",
   oOk: "Thanks! This is a demo, so nothing was sent.",
   bottle: "30 G PROTEIN · STRAWBERRY",
+  flPick: "Pick flavour",
+  flPer: "per bottle",
   foot: "SweProtein is a fictional brand. Demo site built by SweGBG Agency.",
 };
 
 export const dict: Record<Lang, Dict> = { sv, en };
 
 export type Kind = "berry" | "choc" | "mango" | "blue" | "oat";
-export type Flavour = { id: string; bg: string; fg: string; kind: Kind; name: Record<Lang, string>; tag: Record<Lang, string>; desc: Record<Lang, string> };
+/** neon = the bottle's paint colour (Figma bottles in public/img/smaker/), notes = taste notes shown on the card. */
+export type Flavour = {
+  id: string; bg: string; fg: string; kind: Kind; neon: string;
+  name: Record<Lang, string>; tag: Record<Lang, string>; desc: Record<Lang, string>; notes: Record<Lang, string[]>;
+};
 
 export const flavours: Flavour[] = [
-  { id: "jordgubb", bg: "#ef3f6b", fg: "#2a0712", kind: "berry", name: { sv: "Jordgubb", en: "Strawberry" }, tag: { sv: "Bästsäljare", en: "Best seller" },
-    desc: { sv: "Svenska jordgubbar och en skvätt rödbeta för färgen.", en: "Swedish strawberries and a splash of beetroot for colour." } },
-  { id: "choklad", bg: "#6b3a26", fg: "#fbf1ec", kind: "choc", name: { sv: "Choklad", en: "Chocolate" }, tag: { sv: "Efter passet", en: "Post-workout" },
-    desc: { sv: "Mörk kakao, lite havssalt och krämig havre.", en: "Dark cocoa, a pinch of sea salt and creamy oats." } },
-  { id: "mango", bg: "#f6a623", fg: "#2b1600", kind: "mango", name: { sv: "Mango", en: "Mango" }, tag: { sv: "Frukost", en: "Breakfast" },
-    desc: { sv: "Mogen mango och passionsfrukt. Smakar sommar.", en: "Ripe mango and passion fruit. Tastes like summer." } },
-  { id: "blabar", bg: "#3b3f9e", fg: "#f2f0ff", kind: "blue", name: { sv: "Blåbär", en: "Blueberry" }, tag: { sv: "Nyhet", en: "New" },
-    desc: { sv: "Skogsblåbär och bourbonvanilj.", en: "Wild blueberries and bourbon vanilla." } },
+  { id: "jordgubb", bg: "#ef3f6b", fg: "#2a0712", kind: "berry", neon: "#ff3d8b", name: { sv: "Jordgubb", en: "Strawberry" }, tag: { sv: "Bästsäljare", en: "Best seller" },
+    desc: { sv: "Svenska jordgubbar och en skvätt rödbeta för färgen.", en: "Swedish strawberries and a splash of beetroot for colour." }, notes: { sv: ["Jordgubb", "Rödbeta", "Havre"], en: ["Strawberry", "Beetroot", "Oats"] } },
+  { id: "choklad", bg: "#6b3a26", fg: "#fbf1ec", kind: "choc", neon: "#e8894a", name: { sv: "Choklad", en: "Chocolate" }, tag: { sv: "Efter passet", en: "Post-workout" },
+    desc: { sv: "Mörk kakao, lite havssalt och krämig havre.", en: "Dark cocoa, a pinch of sea salt and creamy oats." }, notes: { sv: ["Mörk kakao", "Havssalt", "Havre"], en: ["Dark cocoa", "Sea salt", "Oats"] } },
+  { id: "mango", bg: "#f6a623", fg: "#2b1600", kind: "mango", neon: "#ffc21a", name: { sv: "Mango", en: "Mango" }, tag: { sv: "Frukost", en: "Breakfast" },
+    desc: { sv: "Mogen mango och passionsfrukt. Smakar sommar.", en: "Ripe mango and passion fruit. Tastes like summer." }, notes: { sv: ["Mango", "Passionsfrukt", "Lime"], en: ["Mango", "Passion fruit", "Lime"] } },
+  { id: "blabar", bg: "#3b3f9e", fg: "#f2f0ff", kind: "blue", neon: "#3aa8ff", name: { sv: "Blåbär", en: "Blueberry" }, tag: { sv: "Nyhet", en: "New" },
+    desc: { sv: "Skogsblåbär och bourbonvanilj.", en: "Wild blueberries and bourbon vanilla." }, notes: { sv: ["Skogsblåbär", "Vanilj", "Havre"], en: ["Wild blueberry", "Vanilla", "Oats"] } },
 ];

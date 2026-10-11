@@ -87,18 +87,6 @@ section.block { padding-block: clamp(4rem, 10vw, 7rem); }
 .h2 { font: 400 clamp(2.4rem, 6vw, 4.2rem)/.95 var(--display); margin: 0 0 1rem; text-wrap: balance; max-width: 16ch; }
 .intro-p { color: var(--milk-dim); max-width: 52ch; margin: 0; }
 
-.flavours { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1rem; margin-top: 2.6rem; }
-.fl { position: relative; min-width: 0; border-radius: 24px; padding: 1.4rem; overflow: hidden; color: var(--fg); background: var(--bg);
-  display: grid; gap: .3rem; align-content: start; min-height: 22rem; isolation: isolate; transition: transform .4s cubic-bezier(.2, .8, .2, 1); }
-.fl:hover { transform: translateY(-6px) rotate(-.6deg); }
-.fl canvas { position: absolute; right: -10%; bottom: -6%; width: 78%; aspect-ratio: 1; z-index: -1; pointer-events: none; }
-.fl .name { font: 400 2rem/1 var(--display); margin: 0; }
-.fl .tag { font: 600 .7rem var(--mono); letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
-.fl .desc { font-size: .92rem; max-width: 22ch; margin: .4rem 0 0; }
-.fl .foot { position: absolute; left: 1.4rem; bottom: 1.3rem; display: grid; gap: .1rem; }
-.fl .g { font: 400 2.6rem/1 var(--display); }
-.fl .g small { font: 600 .75rem var(--mono); letter-spacing: .08em; margin-left: .2rem; }
-.fl .price { font: 600 .82rem var(--mono); }
 
 .label-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 5rem); align-items: center; }
 @media (max-width: 760px) { .label-grid { grid-template-columns: 1fr; } }
@@ -149,4 +137,93 @@ footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; g
   .stat { background: rgba(23, 12, 18, .6); }
   /* Shorter scroll on phones: about two swipes from strawberry to bottle (desktop keeps 560vh) */
   .scene { height: 320vh; }
+}
+
+/* ---------- flavour cards: floating Figma bottles over their ingredients ---------- */
+.flavours { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(.8rem, 1.6vw, 1.2rem);
+  width: min(82rem, 100%); margin: 2.6rem auto 0; padding-inline: clamp(16px, 4vw, 2.5rem); }
+@media (max-width: 1100px) { .flavours { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.fl { --rx: 0; --ry: 0; position: relative; min-width: 0; min-height: 40rem; border-radius: 28px; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-rows: auto 1fr auto; padding: 1.5rem; color: var(--milk);
+  background: radial-gradient(120% 80% at 50% 62%, color-mix(in srgb, var(--c) 26%, #120a0e) 0%, #0d070a 70%);
+  border: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+  box-shadow: 0 30px 80px -40px color-mix(in srgb, var(--c) 60%, transparent);
+  transform: perspective(900px) rotateY(calc(var(--rx) * 6deg)) rotateX(calc(var(--ry) * -6deg));
+  transition: transform .5s cubic-bezier(.2,.8,.2,1), border-color .4s, box-shadow .4s; }
+.fl:hover { border-color: color-mix(in srgb, var(--c) 70%, transparent); box-shadow: 0 40px 100px -40px var(--c); }
+
+/* ingredient photo, dim until hover */
+.fl-scene { position: absolute; inset: 0; z-index: -4; background-size: cover; background-position: center 70%;
+  opacity: .3; filter: saturate(1.15) blur(1px); transform: scale(1.08); transition: opacity .6s, filter .6s, transform 1.2s cubic-bezier(.2,.8,.2,1);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 50%, rgba(0,0,0,.6) 100%); mask-image: linear-gradient(180deg, transparent 0%, #000 50%, rgba(0,0,0,.6) 100%); }
+.fl:hover .fl-scene { opacity: .55; filter: saturate(1.3) blur(0); transform: scale(1); }
+
+.fl-glow { position: absolute; left: 50%; top: 58%; width: 80%; aspect-ratio: 1; z-index: -3; translate: -50% -50%; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 70%, transparent) 0%, transparent 65%); filter: blur(20px); opacity: .55;
+  animation: flGlow 4.5s ease-in-out infinite paused; }
+@keyframes flGlow { 50% { opacity: .9; scale: 1.12; } }
+
+/* huge outlined flavour name drifting behind the bottle */
+.fl-ghost { position: absolute; left: 0; top: 44%; z-index: -2; white-space: nowrap; pointer-events: none;
+  font: 400 clamp(5rem, 9vw, 8rem)/1 var(--display); color: transparent; -webkit-text-stroke: 1.5px color-mix(in srgb, var(--c) 45%, transparent);
+  opacity: .45; animation: flGhost 14s linear infinite paused; }
+@keyframes flGhost { from { transform: translateX(0); } to { transform: translateX(-40%); } }
+
+/* drops of shake rising past the bottle */
+.fl-drops { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+.fl-drops i { position: absolute; bottom: 18%; left: calc(18% + var(--k) * 10%); width: calc(.35rem + (var(--k) * .07rem)); aspect-ratio: .8;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: var(--c); opacity: 0; z-index: -1;
+  box-shadow: 0 0 12px var(--c); animation: flDrop calc(3.2s + var(--k) * .45s) ease-in calc(var(--k) * -.7s) infinite paused; }
+@keyframes flDrop { 0% { transform: translateY(0) scale(.6); opacity: 0; } 15% { opacity: .9; } 100% { transform: translateY(-22rem) scale(1); opacity: 0; } }
+
+/* the bottle */
+.fl-stage { position: relative; display: grid; place-items: end center; min-height: 0; padding-top: 1rem; }
+.fl-bottle { position: relative; z-index: 1; height: clamp(17rem, 26vw, 22rem); width: auto; max-width: 100%; object-fit: contain;
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,.6)) drop-shadow(0 0 22px color-mix(in srgb, var(--c) 45%, transparent));
+  translate: calc(var(--rx) * 14px) 0; animation: flFloat 5s ease-in-out calc(var(--i) * -1.2s) infinite paused;
+  transition: translate .5s cubic-bezier(.2,.8,.2,1), filter .4s; }
+.fl:hover .fl-bottle { filter: drop-shadow(0 26px 40px rgba(0,0,0,.65)) drop-shadow(0 0 34px var(--c)); }
+@keyframes flFloat { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-14px) rotate(2deg); } }
+.fl-shadow { position: absolute; bottom: -.4rem; width: 46%; height: 1.1rem; border-radius: 50%; background: rgba(0,0,0,.65); filter: blur(8px);
+  animation: flShadow 5s ease-in-out calc(var(--i) * -1.2s) infinite paused; }
+@keyframes flShadow { 50% { transform: scaleX(.78); opacity: .6; } }
+
+.fl.on .fl-glow, .fl.on .fl-ghost, .fl.on .fl-drops i, .fl.on .fl-bottle, .fl.on .fl-shadow { animation-play-state: running; }
+
+/* text */
+.fl-head { position: relative; z-index: 2; display: grid; gap: .3rem; }
+.fl .tag { font: 600 .7rem var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--c); }
+.fl .name { font: 400 clamp(2.2rem, 3vw, 2.7rem)/1 var(--display); margin: 0; }
+.fl .desc { margin: .2rem 0 0; font-size: .95rem; color: var(--milk-dim); max-width: 26ch; }
+.fl-foot { position: relative; z-index: 2; display: grid; gap: .9rem; margin-top: 1.2rem; }
+.fl-notes { display: flex; flex-wrap: wrap; gap: .35rem; list-style: none; margin: 0; padding: 0; }
+.fl-notes li { font: 600 .66rem var(--mono); letter-spacing: .1em; text-transform: uppercase; padding: .35rem .6rem; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent); background: rgba(13, 7, 10, .55); }
+.fl-buy { display: grid; grid-template-columns: auto 1fr auto; align-items: end; gap: .8rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+.fl .g { font: 400 2.4rem/.9 var(--display); color: var(--c); }
+.fl .g small { display: block; font: 600 .62rem var(--mono); letter-spacing: .12em; color: var(--milk-dim); margin-top: .25rem; }
+.fl .price { font: 600 1rem var(--body); line-height: 1.2; }
+.fl .price small { display: block; font: 500 .7rem var(--mono); color: var(--milk-dim); }
+.fl-btn { text-decoration: none; font: 600 .8rem var(--body); padding: .65rem 1rem; border-radius: 999px; color: #120a0e; background: var(--c);
+  box-shadow: 0 0 0 0 var(--c); transition: box-shadow .3s, transform .3s; white-space: nowrap; }
+.fl-btn:hover { transform: translateY(-2px); box-shadow: 0 0 24px -2px var(--c); }
+
+/* staggered entrance (visible at rest; only animates where supported) */
+@supports (animation-timeline: view()) {
+  .fl { animation: flIn linear both; animation-timeline: view(); animation-range: entry 0% entry 60%; }
+  @keyframes flIn { from { opacity: .2; translate: 0 calc(3rem + var(--i) * 1.2rem); } to { opacity: 1; translate: 0 0; } }
+}
+
+/* phones: a swipeable row instead of a tall stack */
+@media (max-width: 760px) {
+  .flavours { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: .8rem; padding-bottom: 1rem; scrollbar-width: none; }
+  .flavours::-webkit-scrollbar { display: none; }
+  .fl { flex: 0 0 82%; scroll-snap-align: center; min-height: 36rem; transform: none; animation: none; }
+  .fl-scene { opacity: .38; filter: saturate(1.2); }
+  .fl-ghost { font-size: 5.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fl-glow, .fl-ghost, .fl-drops i, .fl-bottle, .fl-shadow, .fl { animation: none !important; }
+  .fl { transform: none; }
 }
