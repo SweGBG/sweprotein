@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLang } from "@/lib/LangContext";
 import { site } from "@/lib/content";
+import { crintro, nearestFrame, onCrintro, wantFrame } from "@/lib/crintro";
 import { DRAW, TAU, clamp, easeIn, lerp, mix, rnd, roundRect, smooth } from "@/lib/draw";
 import type { Kind } from "@/lib/content";
 
@@ -37,24 +38,21 @@ export default function Scene() {
   const layerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const bottleText = useRef(t.bottle);
   const [mode, setMode] = useState<"canvas" | "video" | "frames">("canvas");
+  const [videoSrc, setVideoSrc] = useState<string | null>(null);
   const useVideo = mode === "video";
 
   bottleText.current = t.bottle;
 
-  // Pick the scene source: stills on phones, film on desktop, drawn canvas as fallback.
+  // Pick the scene source from CRiNTRO (which already started loading during the intro):
+  // stills on phones, film on desktop, the scene drawn in code if neither could load.
   useEffect(() => {
-    let alive = true;
-    const phone = matchMedia("(max-width: 820px), (pointer: coarse)").matches;
-    const { dir, count, ext } = site.mobileFrames;
-    const check = (url: string, type: string) =>
-      fetch(url, { method: "HEAD" }).then((r) => r.ok && (r.headers.get("content-type") ?? "").includes(type)).catch(() => false);
-    (async () => {
-      if (phone && count > 0 && (await check(`${dir}001${ext}`, "image"))) alive && setMode("frames");
-      else if (!phone && (await check(site.sceneVideo, "video"))) alive && setMode("video");
-    })();
-    return () => {
-      alive = false;
+    const store = crintro();
+    const sync = () => {
+      setMode(store.mode === "frames" ? "frames" : store.mode === "video" ? "video" : "canvas");
+      setVideoSrc(store.videoUrl);
     };
+    sync();
+    return onCrintro(sync);
   }, []);
 
   useEffect(() => {
@@ -63,36 +61,19 @@ export default function Scene() {
     const scene = sceneRef.current!;
     const video = videoRef.current;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let W = 0, H = 0, DPR = 1, cur = 0, raf = 0, lastSeek = 0, lastFrame = -1;
+    let W = 0, H = 0, DPR = 1, cur = 0, raf = 0, lastSeek = 0;
 
-    // Phone mode: load every still up front (small files), draw the nearest loaded one.
-    const frames: HTMLImageElement[] = [];
-    // ready[i] = decoded and safe to draw without a hitch. Decoding happens while the page
-    // loads, not in the middle of a scroll.
-    const ready: boolean[] = [];
-    if (mode === "frames") {
-      const { dir, count, ext } = site.mobileFrames;
-      for (let i = 1; i <= count; i++) {
-        const img = new Image();
-        img.decoding = "async";
-        img.src = `${dir}${String(i).padStart(3, "0")}${ext}`;
-        const k = i - 1;
-        img.decode().then(() => (ready[k] = true)).catch(() => img.complete && (ready[k] = !!img.naturalWidth));
-        frames.push(img);
-      }
-    }
+    // Phone mode: CRiNTRO streams the stills; draw the decoded frame nearest the scroll position.
+    let lastImg: CanvasImageSource | null = null;
     const drawFrame = (p: number) => {
-      const want = Math.round(p * (frames.length - 1));
-      let idx = -1;
-      for (let d = 0; d < frames.length && idx < 0; d++) {
-        if (ready[want - d]) idx = want - d;
-        else if (ready[want + d]) idx = want + d;
-      }
-      if (idx < 0 || idx === lastFrame) return;
-      lastFrame = idx;
-      const img = frames[idx];
-      const s = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-      const w = img.naturalWidth * s, h = img.naturalHeight * s;
+      const want = Math.round(p * (site.mobileFrames.count - 1));
+      wantFrame(want);
+      const img = nearestFrame(want);
+      if (!img || img === lastImg) return;
+      lastImg = img;
+      const iw = img.width, ih = img.height;
+      const s = Math.max(W / iw, H / ih);
+      const w = iw * s, h = ih * s;
       ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
       ctx.fillStyle = "#170c12";
       ctx.fillRect(0, 0, W, H);
@@ -106,7 +87,7 @@ export default function Scene() {
       H = cv.clientHeight;
       cv.width = W * DPR;
       cv.height = H * DPR;
-      lastFrame = -1;
+      lastImg = null;
     };
     const progress = () => {
       const r = scene.getBoundingClientRect();
@@ -328,7 +309,7 @@ export default function Scene() {
       cancelAnimationFrame(raf);
       removeEventListener("resize", resize);
     };
-  }, [mode, useVideo]);
+  }, [mode, useVideo, videoSrc]);
 
   const setLayer = (i: number) => (el: HTMLDivElement | null) => {
     layerRefs.current[i] = el;
@@ -338,7 +319,7 @@ export default function Scene() {
     <div className="scene" ref={sceneRef} data-video={mode === "canvas" ? "off" : "on"}>
       <div className="stage">
         {useVideo ? (
-          <video ref={videoRef} className="scene-video" src={site.sceneVideo} poster={site.scenePoster} muted playsInline preload="auto" aria-hidden="true" />
+          <video ref={videoRef} className="scene-video" src={videoSrc ?? undefined} poster={site.scenePoster} muted playsInline preload="auto" aria-hidden="true" />
         ) : null}
         <canvas ref={canvasRef} className="scene-canvas" aria-hidden="true" hidden={useVideo} />
         <div className="scene-shade" aria-hidden="true" />
