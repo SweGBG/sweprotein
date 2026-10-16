@@ -11,11 +11,13 @@ export const site = {
   sceneVideo: "/video/sweprotein-scene.mp4",
   scenePoster: "/video/sweprotein-poster.jpg",
   /**
-   * Phones get the same film as a sequence of stills (4 per second, 600x768, ~3 MB),
-   * drawn to a canvas. Scrubbing a video is too heavy for mobile decoders; stills are not.
-   * Re-create with: ffmpeg -i public/video/sweprotein-scene.mp4 -vf "fps=4,crop=600:768:(iw-600)/2:0" -c:v libwebp -quality 70 public/video/m/f%03d.webp
+   * Phones get the same film as a sequence of stills (6 per second, 900x1152, sharpened, ~9 MB),
+   * streamed by CRiNTRO (src/lib/crintro.ts) while the intro plays. Scrubbing a video is too heavy
+   * for mobile decoders; stills are not. Bump the folder name (m2, m3 …) when you re-create them,
+   * since the files are cached as immutable. Re-create with:
+   * ffmpeg -i public/video/sweprotein-scene.mp4 -vf "fps=6,crop=600:768:(iw-600)/2:0,scale=900:1152:flags=lanczos,unsharp=5:5:0.8:5:5:0" -c:v libwebp -quality 80 -compression_level 6 public/video/m2/f%03d.webp
    */
-  mobileFrames: { dir: "/video/m/f", count: 128, ext: ".webp" },
+  mobileFrames: { dir: "/video/m2/f", count: 192, ext: ".webp" },
 };
 
 const sv = {
